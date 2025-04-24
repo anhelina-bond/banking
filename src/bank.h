@@ -42,4 +42,11 @@ int waitTeller(pid_t pid, int *status);
 void deposit(void *arg);
 void withdraw(void *arg);
 
+extern SharedData *shared_data;
+extern sem_t *sem;
+extern int client_counter;
+void handle_signal(int sig);
+void write_log(const char *id, char type, int amount, int balance);
+
+
 #endif

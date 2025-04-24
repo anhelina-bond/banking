@@ -32,6 +32,12 @@ void cleanup() {
     exit(0);
 }
 
+void handle_signal(int sig) {
+    printf("\nSignal received closing active Tellers\n");
+    cleanup();
+    exit(0);
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 3 || strcmp(argv[1], "AdaBank") != 0) {
         printf("Usage: BankServer AdaBank #ServerFIFO_Name\n");

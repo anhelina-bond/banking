@@ -1,6 +1,10 @@
 #include "bank.h"
 #include <sys/prctl.h>
 
+extern SharedData *shared_data;
+extern sem_t *sem;
+extern int client_counter;
+
 pid_t Teller(void (*func)(void*), void *arg) {
     pid_t pid = fork();
     if (pid == 0) {
