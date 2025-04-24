@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -I./include
+CFLAGS = -Wall -Wextra 
 LDFLAGS = -pthread -lrt
 
 SRC = src/server.c src/teller.c src/client.c
