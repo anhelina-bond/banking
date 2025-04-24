@@ -1,4 +1,4 @@
-#include "..\include\bank.h"
+#include "bank.h"
 #include <signal.h>
 #include <time.h>
 
