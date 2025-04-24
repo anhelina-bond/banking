@@ -1,4 +1,4 @@
-#include "../include/bank.h"
+#include "..\include\bank.h"
 #include <sys/prctl.h>
 
 pid_t Teller(void (*func)(void*), void *arg) {

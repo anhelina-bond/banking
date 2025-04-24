@@ -1,4 +1,4 @@
-#include "../include/bank.h"
+#include "..\include\bank.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
