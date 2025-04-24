@@ -33,6 +33,7 @@ void cleanup() {
 }
 
 void handle_signal(int sig) {
+    (void)sig;
     printf("\nSignal received closing active Tellers\n");
     cleanup();
     exit(0);
