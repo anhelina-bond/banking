@@ -73,21 +73,6 @@ int main(int argc, char *argv[]) {
     
     while (1) {
         printf("Waiting for clients @%s…\n", SERVER_FIFO);
-        Request req;
-        if (read(server_fd, &req, sizeof(Request)) > 0) {
-            client_counter++;
-            printf("-- Received %d clients from PIDClientX..\n", client_counter);
-            
-            pid_t tid = Teller(strcmp(req.action, "deposit") == 0 ? deposit : withdraw, &req);
-            printf("-- Teller PID%d is active serving Client%02d…\n", tid, client_counter);
-            
-            waitTeller(tid, NULL);
-        }
-    }
-}
-
-while (1) {
-        printf("Waiting for clients @%s…\n", SERVER_FIFO);
         fflush(stdout);
 
         Request req_buffer[10]; // Max batch size 10
@@ -140,3 +125,5 @@ while (1) {
             free(teller_msgs);
         }
     }
+}
+
