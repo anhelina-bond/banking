@@ -62,16 +62,19 @@ void withdraw(void *arg) {
                     memmove(&shared_data->accounts[i], &shared_data->accounts[i+1], 
                            (shared_data->count - i - 1) * sizeof(Account));
                     shared_data->count--;
-                }
+                } 
                 write_log(shared_data->accounts[i].id, 'W', req->amount, shared_data->accounts[i].balance);
                 success = 1;
-            }
+            } 
             break;
         }
+        
+        if (!success) {
+            printf("Client%02d withdraws %d credit.. operation not permitted.\n", client_counter, req->amount);
+        }
+        success = 0;
     }
     
-    if (!success) {
-        printf("Client%02d withdraws %d credit.. operation not permitted.\n", client_counter, req->amount);
-    }
+    
     sem_post(sem);
 }
