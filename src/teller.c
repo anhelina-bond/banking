@@ -23,6 +23,7 @@ void deposit(void *arg) {
     sem_wait(sem);
     
     int found = 0;
+    printf("[DEBUG] Current account count: %d\n", shared_data->count);
     for (int i = 0; i < shared_data->count; i++) {
         printf("%s - %s", shared_data->accounts[i].id, req->account_id);
         if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {
@@ -56,7 +57,7 @@ void withdraw(void *arg) {
     Request *req = (Request*)arg;
     sem_wait(sem);
     int success = 0;
-    
+    printf("[DEBUG] Current account count: %d\n", shared_data->count);
     for (int i = 0; i < shared_data->count; i++) {
         printf("%s - %s", shared_data->accounts[i].id, req->account_id);
         if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {
