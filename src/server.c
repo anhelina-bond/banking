@@ -70,8 +70,20 @@ int main(int argc, char *argv[]) {
 
     // Shared memory setup
     int shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
-    ftruncate(shm_fd, sizeof(SharedData));
+    if (shm_fd == -1) {
+        perror("shm_open failed");
+        exit(1);
+    }
+    if (ftruncate(shm_fd, sizeof(SharedData)) == -1) {
+        perror("ftruncate failed");
+        exit(1);
+    }
     shared_data = mmap(NULL, sizeof(SharedData), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if (shared_data == MAP_FAILED) {
+        perror("mmap failed");
+        exit(1);
+    }
+    // Explicitly initialize count to 0
     shared_data->count = 0;
 
     // Semaphores setup
@@ -117,7 +129,14 @@ int main(int argc, char *argv[]) {
                 Request *req = &req_buffer[i];
                 int client_num;
 
-                // Lock semaphore before reading shared_data->count
+               
+
+                // Fork Teller and process request
+                
+                pid_t tid = Teller(strcmp(req->action, "deposit") == 0 ? deposit : withdraw, &req);
+                waitpid(tid, NULL, 0); // Wait for Teller to finish
+
+                 // Lock semaphore before reading shared_data->count
                 sem_wait(sem);
                 if (strcmp(req->account_id, "NEW") == 0) {
                     // New client
@@ -127,12 +146,8 @@ int main(int argc, char *argv[]) {
                     client_num = get_client_number(req->account_id);
                 }
                 sem_post(sem); // Unlock immediately after reading
-
-                // Fork Teller and process request
                 printf("From server acc id - %s",  req->account_id);
-                pid_t tid = Teller(strcmp(req->action, "deposit") == 0 ? deposit : withdraw, &req);
                 printf( "-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
-                waitpid(tid, NULL, 0); // Wait for Teller to finish
             }
 
             // Print all buffered Teller messages

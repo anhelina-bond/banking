@@ -49,6 +49,7 @@ void deposit(void *arg) {
         shared_data->count++; // Atomic increment
         printf("Client%02d served.. %s\n", new_client_num, shared_data->accounts[shared_data->count - 1].id);
         write_log(shared_data->accounts[shared_data->count - 1].id, 'D', req->amount, req->amount);
+        printf("[DEPOSIT] Created BankID_%02d. New count: %d\n", new_client_num, shared_data->count);
     }
     sem_post(sem);
 }
@@ -73,6 +74,7 @@ void withdraw(void *arg) {
                 }
                 write_log(shared_data->accounts[i].id, 'W', req->amount, shared_data->accounts[i].balance);
                 success = 1;
+                printf("[WITHDRAW] Updated count: %d\n", shared_data->count);
             }
             break; // Exit loop after processing
         }
