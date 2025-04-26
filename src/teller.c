@@ -46,7 +46,7 @@ void deposit(void *arg) {
         }
         sprintf(shared_data->accounts[shared_data->count].id, "BankID_%02d", new_client_num);
         shared_data->accounts[shared_data->count].balance = req->amount;
-        shared_data->count++; // Atomic increment
+        // shared_data->count++; // Atomic increment
         printf("Client%02d served.. %s\n", new_client_num, shared_data->accounts[shared_data->count - 1].id);
         write_log(shared_data->accounts[shared_data->count - 1].id, 'D', req->amount, req->amount);
     }

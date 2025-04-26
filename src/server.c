@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
                 sem_wait(sem);
                 if (strcmp(req->account_id, "NEW") == 0) {
                     // New client
-                    shared_data->count++;
+                    shared_data->count += 1;
                     client_num = shared_data->count;
                 } else {
                     // Existent client
