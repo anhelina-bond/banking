@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
         char id[20], action[10];
         sscanf(line, "%s %s %d", id, action, &req.amount);
         
-        strcpy(req.account_id, ((strcmp(id, "N") == 0) || strcmp(id, "BankID_None")==0) ? "NEW" : id);
+        strcpy(req.account_id, ((strcmp(id, "N") == 0))==0) ? "NEW" : id);
         strcpy(req.action, action);
         
         // Lock mutex before writing to FIFO

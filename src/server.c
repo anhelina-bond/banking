@@ -11,24 +11,19 @@ int server_fd;
 const char* LOG_FILE = "AdaBank.bankLog";
 
 
-
-
 int get_client_number(const char *account_id) {
     // Check if the account ID starts with "BankID_"
     if (strncmp(account_id, "BankID_", 7) != 0) {
         return shared_data->count + 1;
     }
-
     // Extract the part after "BankID_"
     const char *num_part = account_id + 7;
-
     // Check if the remaining characters are all digits
     for (int i = 0; num_part[i] != '\0'; i++) {
         if (!isdigit(num_part[i])) {
             return shared_data->count + 1;
         }
     }
-
     // Convert to integer and return
     return atoi(num_part);
 }
