@@ -24,7 +24,7 @@ void deposit(void *arg) {
     
     int found = 0;
     for (int i = 0; i < shared_data->count; i++) {
-        printf("%d - %d", shared_data->accounts[i].id, req->account_id);
+        printf("%c - %c", shared_data->accounts[i].id, req->account_id);
         if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {
             shared_data->accounts[i].balance += req->amount;
             int client_num = get_client_number(shared_data->accounts[i].id);
@@ -34,7 +34,7 @@ void deposit(void *arg) {
             break;
         }
     }
-    printf(" - %d",  req->account_id);
+    printf(" - %c",  req->account_id);
     if (!found && strcmp(req->account_id, "NEW") == 0) {
         // Assign client_num under semaphore
         int new_client_num = shared_data->count + 1;
@@ -58,7 +58,7 @@ void withdraw(void *arg) {
     int success = 0;
     
     for (int i = 0; i < shared_data->count; i++) {
-        printf("%d - %d", shared_data->accounts[i].id, req->account_id);
+        printf("%c - %c", shared_data->accounts[i].id, req->account_id);
         if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {
             if (shared_data->accounts[i].balance >= req->amount) {
                 int client_num = get_client_number(shared_data->accounts[i].id);
