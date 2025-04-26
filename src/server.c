@@ -156,7 +156,6 @@ int main(int argc, char *argv[]) {
                 sem_post(sem); // Unlock immediately after reading
 
                 // Fork Teller and process request
-                printf("From server acc id - %s",  req->account_id);
                 pid_t tid = Teller(strcmp(req->action, "deposit") == 0 ? deposit : withdraw, req);
                 printf( "-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
                 waitpid(tid, NULL, 0); // Wait for Teller to finish

@@ -74,7 +74,7 @@ void withdraw(void *arg) {
             if (shared_data->accounts[i].balance >= req->amount) {                  // requested amount is valid
                 int client_num = get_client_number(shared_data->accounts[i].id);
                 shared_data->accounts[i].balance -= req->amount;
-                printf("Client%02d withdraws %d credits… updating log… ", client_num, req->amount);
+                printf("Client%02d withdraws %d credits… updating log…\n ", client_num, req->amount);
                 if (shared_data->accounts[i].balance == 0) {
                     printf("Bye Client%02d\n", client_num);
                     memmove(&shared_data->accounts[i], &shared_data->accounts[i+1], 
