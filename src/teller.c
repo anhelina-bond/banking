@@ -40,7 +40,6 @@ void deposit(void *arg) {
     } else {
         printf("[DEBUG] Current account count: %d\n", shared_data->count);
         for (int i = 0; i < shared_data->count; i++) {
-            printf("%s - %s", shared_data->accounts[i].id, req->account_id);
             if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {
                 shared_data->accounts[i].balance += req->amount;
                 int client_num = get_client_number(shared_data->accounts[i].id);
@@ -69,18 +68,19 @@ void withdraw(void *arg) {
     int success = 0;
     printf("[DEBUG] Current account count: %d\n", shared_data->count);
     for (int i = 0; i < shared_data->count; i++) {
-        printf("%s - %s", shared_data->accounts[i].id, req->account_id);
         if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {            // client found in database
             if (shared_data->accounts[i].balance >= req->amount) {                  // requested amount is valid
                 int client_num = get_client_number(shared_data->accounts[i].id);
                 shared_data->accounts[i].balance -= req->amount;
                 printf("Client%02d withdraws %d credits… updating log…\n ", client_num, req->amount);
+                
+                write_log(shared_data->accounts[i].id, 'W', req->amount, shared_data->accounts[i].balance);
+
                 if (shared_data->accounts[i].balance == 0) {
                     printf("Bye Client%02d\n", client_num);
                     memmove(&shared_data->accounts[i], &shared_data->accounts[i+1], 
                            (shared_data->count - i - 1) * sizeof(Account));
                 }
-                write_log(shared_data->accounts[i].id, 'W', req->amount, shared_data->accounts[i].balance);
                 success = 1;
                 printf("[WITHDRAW] Updated count: %d\n", shared_data->count);
             }

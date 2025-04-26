@@ -17,6 +17,6 @@ bin/client: src/client.c
 	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
 
 clean:
-	rm -rf bin  # Remove entire bin directory
+	rm -rf bin AdaBank.bankLog  # Remove entire bin directory
 
 .PHONY: all clean
