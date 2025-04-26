@@ -27,6 +27,12 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    char line[256];
+    int cmd_count = 0;
+    
+    while (fgets(line, sizeof(line), file)) cmd_count++;
+    rewind(file);
+
     // Open server FIFO
     sem_t *mutex = sem_open(FIFO_MUTEX, 0);
     if (mutex == SEM_FAILED) {
