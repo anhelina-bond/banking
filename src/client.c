@@ -13,6 +13,13 @@ int main(int argc, char *argv[]) {
     
     while (fgets(line, sizeof(line), file)) cmd_count++;
     rewind(file);
+
+    // Open FIFO write mutex
+    sem_t *mutex = sem_open(FIFO_MUTEX, 0);
+    if (mutex == SEM_FAILED) {
+        perror("sem_open (client mutex)");
+        exit(1);
+    }
     
     printf("%d clients to connect.. creating clients..\n", cmd_count);
     printf("Connected to Adabank..\n");
