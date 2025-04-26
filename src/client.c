@@ -59,20 +59,13 @@ int main(int argc, char *argv[]) {
         // Send request to server
         sem_wait(mutex);
         write(server_fd, &req, sizeof(Request));
-        close(server_fd);
         sem_post(mutex);
 
         printf("Client%02d connected..%s %d credits\n", client_num, action, req.amount);
         client_num++;
     }
     fclose(file);
-    // sem_t *server_req_sem = sem_open(REQ_SEM, 0);
-    // if (server_req_sem == SEM_FAILED) {
-    //     perror("sem_open (REQ_SEM)");
-    //     exit(1);
-    // }
-    // sem_post(server_req_sem);
-    // sem_close(server_req_sem);
+    close(server_fd);
     sem_t *req_sem = sem_open(REQ_SEM, 0);
     if (req_sem == SEM_FAILED) {
         perror("sem_open (client)");
