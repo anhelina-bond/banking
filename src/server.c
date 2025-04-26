@@ -103,7 +103,6 @@ int main(int argc, char *argv[]) {
             
             if (bytes_read == sizeof(Request)) {
                 req_buffer[batch_count++] = req;
-                if (batch_count >= 10) break; // Optional: Limit batch size
             } else {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) break; // FIFO empty
                 perror("read");
@@ -126,11 +125,11 @@ int main(int argc, char *argv[]) {
                     // Existing client: extract from BankID_XX
                     client_num = get_client_number(req->account_id);
                 }
-
+                client_counter = client_num;
                 // Format message with derived client number
                 teller_msgs[i] = malloc(100);
-                pid_t tid = Teller(strcmp(req.action, "deposit") == 0 ? deposit : withdraw, &req);
-                sprintf(teller_msgs[i], "-- Teller PID%d is active serving Client%02d…\n", tid, client_counter);
+                pid_t tid = Teller(strcmp(req->action, "deposit") == 0 ? deposit : withdraw, &req);
+                sprintf(teller_msgs[i], "-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
 
                 waitpid(tid, NULL, 0); // Wait for Teller to finish
             }
