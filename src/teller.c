@@ -79,7 +79,6 @@ void withdraw(void *arg) {
                     printf("Bye Client%02d\n", client_num);
                     memmove(&shared_data->accounts[i], &shared_data->accounts[i+1], 
                            (shared_data->count - i - 1) * sizeof(Account));
-                    shared_data->count-=1;
                 }
                 write_log(shared_data->accounts[i].id, 'W', req->amount, shared_data->accounts[i].balance);
                 success = 1;
