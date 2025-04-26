@@ -45,7 +45,6 @@ int main(int argc, char *argv[]) {
     printf("Connected to Adabank..\n");
 
     int client_num = 1;
-    char line[256];
     while (fgets(line, sizeof(line), file)) {
         Request req;
         char id[20], action[10];
@@ -74,13 +73,13 @@ int main(int argc, char *argv[]) {
     // }
     // sem_post(server_req_sem);
     // sem_close(server_req_sem);
-    sem_t *sem = sem_open(REQ_SEM, 0);
-    if (sem == SEM_FAILED) {
+    sem_t *req_sem = sem_open(REQ_SEM, 0);
+    if (req_sem == SEM_FAILED) {
         perror("sem_open (client)");
         exit(1);
     }
-    sem_post(sem);  // Signal server
-    sem_close(sem);
+    sem_post(req_sem);  // Signal server
+    sem_close(req_sem);
 
     // Read responses from client FIFO
     int resp_fd = open(client_fifo, O_RDONLY);
