@@ -1,6 +1,7 @@
 #include "bank.h"
 #include <signal.h>
 #include <time.h>
+#include <ctype.h>
 
 SharedData *shared_data;
 sem_t *sem;
@@ -10,11 +11,28 @@ int server_fd;
 const char* LOG_FILE = "AdaBank.bankLog";
 
 
-// Extract client number from BankID_XX (e.g., "BankID_02" → 2)
+
+
 int get_client_number(const char *account_id) {
-    if (strncmp(account_id, "BankID_", 7) != 0) return -1;
-    return atoi(account_id + 7); // Extract numeric part after "BankID_"
+    // Check if the account ID starts with "BankID_"
+    if (strncmp(account_id, "BankID_", 7) != 0) {
+        return shared_data->count + 1;
+    }
+
+    // Extract the part after "BankID_"
+    const char *num_part = account_id + 7;
+
+    // Check if the remaining characters are all digits
+    for (int i = 0; num_part[i] != '\0'; i++) {
+        if (!isdigit(num_part[i])) {
+            return shared_data->count + 1;
+        }
+    }
+
+    // Convert to integer and return
+    return atoi(num_part);
 }
+
 
 void write_log(const char *id, char type, int amount, int balance) {
     FILE *log = fopen(LOG_FILE, "a");

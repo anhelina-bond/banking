@@ -23,7 +23,21 @@ void deposit(void *arg) {
     sem_wait(sem);
     
     int found = 0;
-    if(strcmp(req->account_id, "NEW") != 0) {
+    if(strcmp(req->account_id, "NEW") == 0) {
+        // Assign client_num under semaphore
+            int new_client_num = shared_data->count + 1;
+            if (new_client_num >= MAX_ACCOUNTS) {
+                fprintf(stderr, "Maximum accounts reached!\n");
+                sem_post(sem);
+                exit(1);
+            }
+            sprintf(shared_data->accounts[shared_data->count].id, "BankID_%02d", new_client_num);
+            shared_data->accounts[shared_data->count].balance = req->amount;
+            shared_data->count++; // Atomic increment
+            printf("Client%02d deposited %d credits… updating log\n", new_client_num, req->amount);
+            write_log(shared_data->accounts[shared_data->count - 1].id, 'D', req->amount, req->amount);
+            printf("[DEPOSIT] Created BankID_%02d. New count: %d\n", new_client_num, shared_data->count);
+    } else {
         printf("[DEBUG] Current account count: %d\n", shared_data->count);
         for (int i = 0; i < shared_data->count; i++) {
             printf("%s - %s", shared_data->accounts[i].id, req->account_id);
@@ -36,23 +50,13 @@ void deposit(void *arg) {
                 break;
             }
         }
-        printf(" - %s",  req->account_id);
-    } else {
-        if (!found ) {
-            // Assign client_num under semaphore
-            int new_client_num = shared_data->count + 1;
-            if (new_client_num >= MAX_ACCOUNTS) {
-                fprintf(stderr, "Maximum accounts reached!\n");
-                sem_post(sem);
-                exit(1);
-            }
-            sprintf(shared_data->accounts[shared_data->count].id, "BankID_%02d", new_client_num);
-            shared_data->accounts[shared_data->count].balance = req->amount;
+        if(!found) {
+            int client_num = get_client_number(req->account_id);
+            printf("Client%02d deposits %d credit.. invalid ID.\n", client_num, req->amount);
             shared_data->count++; // Atomic increment
-            printf("Client%02d served.. %s\n", new_client_num, shared_data->accounts[shared_data->count - 1].id);
-            write_log(shared_data->accounts[shared_data->count - 1].id, 'D', req->amount, req->amount);
-            printf("[DEPOSIT] Created BankID_%02d. New count: %d\n", new_client_num, shared_data->count);
         }
+        
+
     }    
 
     free(req); // Release memory
@@ -88,6 +92,7 @@ void withdraw(void *arg) {
     if (!success) {
         int client_num = get_client_number(req->account_id);
         printf("Client%02d withdraws %d credit.. operation not permitted.\n", client_num, req->amount);
+        shared_data->count++; // Atomic increment
     }
 
     free(req); // Release memory
