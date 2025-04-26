@@ -123,20 +123,12 @@ int main(int argc, char *argv[]) {
 
         if (batch_count > 0) {
             printf("-- Received %d clients from PIDClientX..\n", batch_count);
-            // char **teller_msgs = malloc(batch_count * sizeof(char*));
 
             for (int i = 0; i < batch_count; i++) {
                 Request *req = &req_buffer[i];
                 int client_num;
 
-               
-
-                // Fork Teller and process request
-                
-                pid_t tid = Teller(strcmp(req->action, "deposit") == 0 ? deposit : withdraw, &req);
-                waitpid(tid, NULL, 0); // Wait for Teller to finish
-
-                 // Lock semaphore before reading shared_data->count
+                // Lock semaphore before reading shared_data->count
                 sem_wait(sem);
                 if (strcmp(req->account_id, "NEW") == 0) {
                     // New client
@@ -146,16 +138,13 @@ int main(int argc, char *argv[]) {
                     client_num = get_client_number(req->account_id);
                 }
                 sem_post(sem); // Unlock immediately after reading
-                printf("From server acc id - %s",  req->account_id);
-                printf( "-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
-            }
 
-            // Print all buffered Teller messages
-            // for (int i = 0; i < batch_count; i++) {
-            //     printf("%s", teller_msgs[i]);
-            //     free(teller_msgs[i]);
-            // }
-            // free(teller_msgs);
+                // Fork Teller and process request
+                printf("From server acc id - %s",  req->account_id);
+                pid_t tid = Teller(strcmp(req->action, "deposit") == 0 ? deposit : withdraw, &req);
+                printf( "-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
+                waitpid(tid, NULL, 0); // Wait for Teller to finish
+            }
         }
     }
 }
