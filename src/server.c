@@ -4,9 +4,12 @@
 
 SharedData *shared_data;
 sem_t *sem;
+sem_t *req_sem;
+sem_t *fifo_mutex;
 int server_fd;
 int client_counter = 0;
 const char* LOG_FILE = "AdaBank.bankLog";
+
 
 // Extract client number from BankID_XX (e.g., "BankID_02" → 2)
 int get_client_number(const char *account_id) {
@@ -33,6 +36,10 @@ void cleanup() {
     sem_close(sem);
     sem_unlink(SEM_NAME);
     unlink(SERVER_FIFO);
+    sem_close(req_sem);
+    sem_unlink(REQ_SEM);
+    sem_close(fifo_mutex);
+    sem_unlink(FIFO_MUTEX);
     printf("Removing ServerFIFO… Updating log file…\n");
     printf("Adabank says \"Bye\"...\n");
     exit(0);
@@ -60,7 +67,7 @@ int main(int argc, char *argv[]) {
 
     // Create server FIFO
     mkfifo(SERVER_FIFO, 0666);
-    server_fd = open(SERVER_FIFO, O_RDONLY);
+    server_fd = open(SERVER_FIFO, O_RDONLY | O_NONBLOCK);
 
     // Shared memory setup
     int shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
@@ -68,28 +75,39 @@ int main(int argc, char *argv[]) {
     shared_data = mmap(NULL, sizeof(SharedData), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     shared_data->count = 0;
 
+    // Semaphores setup
     sem = sem_open(SEM_NAME, O_CREAT, 0666, 1);
+    req_sem = sem_open(REQ_SEM, O_CREAT, 0666, 0);
+    if (req_sem == SEM_FAILED) {
+        perror("sem_open");
+        exit(1);
+    }
+    sem_unlink(FIFO_MUTEX); // Cleanup previous instances
+    fifo_mutex = sem_open(FIFO_MUTEX, O_CREAT | O_EXCL, 0666, 1);
+    if (fifo_mutex == SEM_FAILED) {
+        perror("sem_open (fifo_mutex)");
+        exit(1);
+    }
 
     
     while (1) {
         printf("Waiting for clients @%s…\n", SERVER_FIFO);
         fflush(stdout);
-
+        
+        sem_wait(req_sem);
         Request req_buffer[10]; // Max batch size 10
         int batch_count = 0;
-        struct pollfd fds = {server_fd, POLLIN, 0};
-
-        // Wait for incoming requests
-        if (poll(&fds, 1, 1000) > 0) { // 1-second timeout
-            while (batch_count < 10) {
-                ssize_t bytes_read = read(server_fd, &req_buffer[batch_count], sizeof(Request));
-                if (bytes_read == sizeof(Request)) {
-                    batch_count++;
-                } else {
-                    if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-                    perror("read");
-                    break;
-                }
+        while (1) {
+            Request req;
+            ssize_t bytes_read = read(server_fd, &req, sizeof(Request));
+            
+            if (bytes_read == sizeof(Request)) {
+                req_buffer[batch_count++] = req;
+                if (batch_count >= 10) break; // Optional: Limit batch size
+            } else {
+                if (errno == EAGAIN || errno == EWOULDBLOCK) break; // FIFO empty
+                perror("read");
+                break;
             }
         }
 

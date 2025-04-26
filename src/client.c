@@ -26,9 +26,21 @@ int main(int argc, char *argv[]) {
         strcpy(req.account_id, ((strcmp(id, "N") == 0) || strcmp(id, "BankID_None")==0) ? "NEW" : id);
         strcpy(req.action, action);
         
-        int server_fd = open(SERVER_FIFO, O_WRONLY);
+        // Lock mutex before writing to FIFO
+        if (sem_wait(mutex) == -1) {
+            perror("sem_wait");
+            break;
+        }
+
+        int server_fd = open(argv[2], O_WRONLY);
         write(server_fd, &req, sizeof(Request));
         close(server_fd);
+
+        // Unlock mutex
+        if (sem_post(mutex) == -1) {
+            perror("sem_post");
+            break;
+        }
         
         printf("Client%02d connected..%s %d credits\n", 
               client_num, action, req.amount);
@@ -36,6 +48,14 @@ int main(int argc, char *argv[]) {
     }
     
     fclose(file);
+    sem_t *sem = sem_open(REQ_SEM, 0);
+    if (sem == SEM_FAILED) {
+        perror("sem_open (client)");
+        exit(1);
+    }
+    sem_post(sem);  // Signal server
+    sem_close(sem);
+    sem_close(mutex);
     printf("exiting..\n");
     return 0;
 }

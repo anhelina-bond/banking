@@ -11,11 +11,14 @@
 #include <sys/mman.h>
 #include <sys/wait.h>
 #include <semaphore.h>
+#include "errno.h"
 
 #define SERVER_FIFO "/tmp/bank_server.fifo"
 #define MAX_ACCOUNTS 100
 #define SHM_NAME "/bank_shm"
 #define SEM_NAME "/bank_sem"
+#define REQ_SEM "/bank_req_sem"
+#define FIFO_MUTEX "/bank_fifo_mutex" // Named semaphore for FIFO write lock
 
 typedef struct {
     char id[20];
