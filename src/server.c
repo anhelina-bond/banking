@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 
     
     while (1) {
-        printf(". . .\nWaiting for clients @%s…\n", SERVER_FIFO);
+        printf("\n. . .\nWaiting for clients @%s…\n", SERVER_FIFO);
         fflush(stdout);
         
         sem_wait(req_sem);

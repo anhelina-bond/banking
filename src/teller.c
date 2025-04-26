@@ -61,9 +61,8 @@ void deposit(void *arg) {
                 client_num, req->account_id);
             shared_data->count +=1; // Atomic increment
         }
-        
-
     }    
+    printf(response);
     // Write response to client FIFO
     int client_fd = open(req->client_fifo, O_WRONLY);
     if (client_fd != -1) {
@@ -109,7 +108,7 @@ void withdraw(void *arg) {
             "Client%02d: Withdrawal failed. Invalid operation.", client_num);
         shared_data->count +=1; // Atomic increment
     }
-
+    printf(response);
     // Write response to client FIFO
     int client_fd = open(req->client_fifo, O_WRONLY);
     if (client_fd != -1) {
