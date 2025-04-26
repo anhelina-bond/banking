@@ -74,15 +74,18 @@ int main(int argc, char *argv[]) {
     sem_post(req_sem);  // Signal server
     sem_close(req_sem);
 
-    // Read responses from client FIFO
-    int resp_fd = open(client_fifo, O_RDONLY);
-    char response[256];
-    ssize_t bytes_read;
-    while ((bytes_read = read(resp_fd, response, sizeof(response))) > 0) {
-        printf("%.*s\n", (int)bytes_read, response);
+    // After sending all requests:
+    printf("Waiting for responses...\n");
+    for (int i = 0; i < cmd_count; i++) {  // cmd_count = number of requests sent
+        int resp_fd = open(client_fifo, O_RDONLY);
+        char response[256];
+        ssize_t bytes_read = read(resp_fd, response, sizeof(response));
+        if (bytes_read > 0) {
+            printf("%.*s\n", (int)bytes_read, response);
+        }
+        close(resp_fd);
     }
-    close(resp_fd);
-    unlink(client_fifo); // Cleanup FIFO
+    unlink(client_fifo);  // Cleanup after all responses
     sem_close(mutex);
     printf("exiting..\n");
     return 0;
