@@ -121,8 +121,7 @@ int main(int argc, char *argv[]) {
                 sem_wait(sem);
                 if (strcmp(req->account_id, "NEW") == 0) {
                     // New client
-                    shared_data->count += 1;
-                    client_num = shared_data->count;
+                    client_num = shared_data->count + 1;
                 } else {
                     // Existent client
                     client_num = get_client_number(req->account_id);
@@ -130,6 +129,7 @@ int main(int argc, char *argv[]) {
                 sem_post(sem); // Unlock immediately after reading
 
                 // Fork Teller and process request
+                printf("From server acc id - %s",  req->account_id);
                 pid_t tid = Teller(strcmp(req->action, "deposit") == 0 ? deposit : withdraw, &req);
                 printf( "-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
                 waitpid(tid, NULL, 0); // Wait for Teller to finish
