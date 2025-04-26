@@ -7,6 +7,13 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    int server_fd = open(argv[2], O_WRONLY);
+    if(!server_fd) {
+        printf("Cannot connect ServerFIFO_Name...");
+        printf("exiting..\n");
+        exit(1);
+    }
+
     // Create client-specific FIFO
     char client_fifo[50];
     snprintf(client_fifo, sizeof(client_fifo), "/tmp/client_%d", getpid());
@@ -46,7 +53,6 @@ int main(int argc, char *argv[]) {
 
         // Send request to server
         sem_wait(mutex);
-        int server_fd = open(argv[2], O_WRONLY);
         write(server_fd, &req, sizeof(Request));
         close(server_fd);
         sem_post(mutex);
@@ -55,13 +61,20 @@ int main(int argc, char *argv[]) {
         client_num++;
     }
     fclose(file);
-    sem_t *server_req_sem = sem_open(REQ_SEM, 0);
-    if (server_req_sem == SEM_FAILED) {
-        perror("sem_open (REQ_SEM)");
+    // sem_t *server_req_sem = sem_open(REQ_SEM, 0);
+    // if (server_req_sem == SEM_FAILED) {
+    //     perror("sem_open (REQ_SEM)");
+    //     exit(1);
+    // }
+    // sem_post(server_req_sem);
+    // sem_close(server_req_sem);
+    sem_t *sem = sem_open(REQ_SEM, 0);
+    if (sem == SEM_FAILED) {
+        perror("sem_open (client)");
         exit(1);
     }
-    sem_post(server_req_sem);
-    sem_close(server_req_sem);
+    sem_post(sem);  // Signal server
+    sem_close(sem);
 
     // Read responses from client FIFO
     int resp_fd = open(client_fifo, O_RDONLY);
@@ -73,5 +86,6 @@ int main(int argc, char *argv[]) {
     close(resp_fd);
     unlink(client_fifo); // Cleanup FIFO
     sem_close(mutex);
+    printf("exiting..\n");
     return 0;
 }
