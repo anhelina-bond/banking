@@ -79,29 +79,21 @@ int main(int argc, char *argv[]) {
     sem_close(req_sem);
 
     // After sending all requests:
-    // Read responses from client FIFO (corrected)
-    int resp_fd = open(client_fifo, O_RDONLY); // Open ONCE
-    int responses_received = 0;
-    char response[256];
-    ssize_t bytes_read;
-
+    // Read responses from client FIFO
     printf("Waiting for responses...\n");
-    while (responses_received < cmd_count) {  // Loop until all responses are received
-        bytes_read = read(resp_fd, response, sizeof(response));
+    for (int i = 0; i < cmd_count; i++) {  // Loop for each expected response
+        int resp_fd = open(client_fifo, O_RDONLY); // Block until server opens FIFO
+        char response[256];
+        ssize_t bytes_read = read(resp_fd, response, sizeof(response));
         if (bytes_read > 0) {
             printf("%.*s\n", (int)bytes_read, response);
-            responses_received++;
-        } else if (bytes_read == 0) {
-            // FIFO closed by server prematurely
-            perror("Server closed FIFO early");
-            break;
         } else {
             perror("read");
-            break;
         }
+        close(resp_fd);
     }
-    close(resp_fd);
-    unlink(client_fifo); 
+    unlink(client_fifo);
+    
     sem_close(mutex);
     printf("exiting..\n");
     return 0;
