@@ -35,6 +35,7 @@ typedef struct {
     char account_id[20];
     int amount;
     char client_fifo[50];
+    int client_sequence;    // Client's request order
 } Request;
 
 // Custom Teller process functions

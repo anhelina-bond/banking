@@ -21,79 +21,101 @@ int waitTeller(pid_t pid, int *status) {
 void deposit(void *arg) {
     Request *req = (Request*)arg;
     sem_wait(sem);
+    char response[256];
+    int success = 0;
     
-    int found = 0;
     if(strcmp(req->account_id, "NEW") == 0) {
         // Assign client_num under semaphore
-            int new_client_num = shared_data->count + 1;
-            if (new_client_num >= MAX_ACCOUNTS) {
-                fprintf(stderr, "Maximum accounts reached!\n");
-                sem_post(sem);
-                exit(1);
-            }
+        int new_client_num = shared_data->count + 1;
+        if (new_client_num >= MAX_ACCOUNTS) {
+            snprintf(response, sizeof(response), 
+                "Client%02d: Deposit failed. Maximum accounts reached!", req->client_sequence);
+        } else {
             sprintf(shared_data->accounts[shared_data->count].id, "BankID_%02d", new_client_num);
             shared_data->accounts[shared_data->count].balance = req->amount;
             shared_data->count +=1; // Atomic increment
-            printf("Client%02d deposited %d credits… updating log\n", new_client_num, req->amount);
+            snprintf(response, sizeof(response), 
+                "Client%02d: Deposited %d credits. New account: %s", 
+                new_client_num, req->amount, shared_data->accounts[shared_data->count - 1].id);
+            success = 1;
             write_log(shared_data->accounts[shared_data->count - 1].id, 'D', req->amount, req->amount);
-            printf("[DEPOSIT] Created BankID_%02d. New count: %d\n", new_client_num, shared_data->count);
+        }
     } else {
-        printf("[DEBUG] Current account count: %d\n", shared_data->count);
+        // Case 2/3: Existing or invalid account
         for (int i = 0; i < shared_data->count; i++) {
             if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {
                 shared_data->accounts[i].balance += req->amount;
                 int client_num = get_client_number(shared_data->accounts[i].id);
-                printf("Client%02d deposited %d credits… updating log\n", client_num, req->amount);
+                snprintf(response, sizeof(response), 
+                    "Client%02d: Deposited %d credits. New balance: %d", 
+                    client_num, req->amount, shared_data->accounts[i].balance);
+                success = 1;
                 write_log(shared_data->accounts[i].id, 'D', req->amount, shared_data->accounts[i].balance);
-                found = 1;
                 break;
             }
         }
-        if(!found) {
+        if(!success) {
             int client_num = get_client_number(req->account_id);
-            printf("Client%02d deposits %d credit.. invalid ID.\n", client_num, req->amount);
+            snprintf(response, sizeof(response), 
+                "Client%02d: Deposit failed. Invalid account: %s", 
+                client_num, req->account_id);
             shared_data->count +=1; // Atomic increment
         }
         
 
     }    
-
-    free(req); // Release memory
+    // Write response to client FIFO
+    int client_fd = open(req->client_fifo, O_WRONLY);
+    if (client_fd != -1) {
+        write(client_fd, response, strlen(response) + 1);
+        close(client_fd);
+    }
     sem_post(sem);
+    free(req);
 }
 
 void withdraw(void *arg) {
     Request *req = (Request*)arg;
     sem_wait(sem);
+    char response[256];
     int success = 0;
-    printf("[DEBUG] Current account count: %d\n", shared_data->count);
+    int client_num = get_client_number(req->account_id);
+
     for (int i = 0; i < shared_data->count; i++) {
         if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {            // client found in database
             if (shared_data->accounts[i].balance >= req->amount) {                  // requested amount is valid
-                int client_num = get_client_number(shared_data->accounts[i].id);
                 shared_data->accounts[i].balance -= req->amount;
-                printf("Client%02d withdraws %d credits… updating log…\n ", client_num, req->amount);
-                
                 write_log(shared_data->accounts[i].id, 'W', req->amount, shared_data->accounts[i].balance);
-
                 if (shared_data->accounts[i].balance == 0) {
-                    printf("Bye Client%02d\n", client_num);
-                    memmove(&shared_data->accounts[i], &shared_data->accounts[i+1], 
+                    // Remove account
+                    memmove(&shared_data->accounts[i], &shared_data->accounts[i + 1], 
                            (shared_data->count - i - 1) * sizeof(Account));
+                        snprintf(response, sizeof(response), 
+                            "Client%02d: Withdrew %d credits. Account closed.", 
+                            client_num, req->amount);
+                } else {
+                    snprintf(response, sizeof(response), 
+                        "Client%02d: Withdrew %d credits. New balance: %d", 
+                        client_num, req->amount, shared_data->accounts[i].balance);
                 }
                 success = 1;
-                printf("[WITHDRAW] Updated count: %d\n", shared_data->count);
+                break;
             }
-            break; // Exit loop after processing
         }
     }
 
     if (!success) {
-        int client_num = get_client_number(req->account_id);
-        printf("Client%02d withdraws %d credit.. operation not permitted.\n", client_num, req->amount);
+        snprintf(response, sizeof(response), 
+            "Client%02d: Withdrawal failed. Invalid operation.", client_num);
         shared_data->count +=1; // Atomic increment
     }
 
-    free(req); // Release memory
+    // Write response to client FIFO
+    int client_fd = open(req->client_fifo, O_WRONLY);
+    if (client_fd != -1) {
+        write(client_fd, response, strlen(response) + 1);
+        close(client_fd);
+    }
     sem_post(sem);
+    free(req);
 }
