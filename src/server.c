@@ -106,9 +106,9 @@ int main(int argc, char *argv[]) {
         fflush(stdout);
         
         sem_wait(req_sem);
-        Request req_buffer[10]; // Max batch size 10
+        Request *req_buffer[20]; // Max batch size 10
         int batch_count = 0;
-        while (1) {
+        while (batch_count < 20) {
             Request *req = malloc(sizeof(Request)); // Allocate on heap
             ssize_t bytes_read = read(server_fd, req, sizeof(Request));
             if (bytes_read == sizeof(Request)) {
