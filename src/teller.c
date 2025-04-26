@@ -8,7 +8,7 @@ pid_t Teller(void (*func)(void*), void *arg) {
     pid_t pid = fork();
     if (pid == 0) {
         prctl(PR_SET_PDEATHSIG, SIGTERM);
-        func(arg);
+        func(arg); 
         exit(0);
     }
     return pid;
@@ -54,7 +54,8 @@ void deposit(void *arg) {
             printf("[DEPOSIT] Created BankID_%02d. New count: %d\n", new_client_num, shared_data->count);
         }
     }    
-    
+
+    free(req); // Release memory
     sem_post(sem);
 }
 
@@ -88,5 +89,7 @@ void withdraw(void *arg) {
         int client_num = get_client_number(req->account_id);
         printf("Client%02d withdraws %d credit.. operation not permitted.\n", client_num, req->amount);
     }
+
+    free(req); // Release memory
     sem_post(sem);
 }

@@ -109,14 +109,12 @@ int main(int argc, char *argv[]) {
         Request req_buffer[10]; // Max batch size 10
         int batch_count = 0;
         while (1) {
-            Request req;
-            ssize_t bytes_read = read(server_fd, &req, sizeof(Request));
-            
+            Request *req = malloc(sizeof(Request)); // Allocate on heap
+            ssize_t bytes_read = read(server_fd, req, sizeof(Request));
             if (bytes_read == sizeof(Request)) {
                 req_buffer[batch_count++] = req;
             } else {
-                if (errno == EAGAIN || errno == EWOULDBLOCK) break; // FIFO empty
-                perror("read");
+                free(req); // Cleanup if read failed
                 break;
             }
         }
@@ -125,7 +123,7 @@ int main(int argc, char *argv[]) {
             printf("-- Received %d clients from PIDClientX..\n", batch_count);
 
             for (int i = 0; i < batch_count; i++) {
-                Request *req = &req_buffer[i];
+                Request *req = req_buffer[i];
                 int client_num;
 
                 // Lock semaphore before reading shared_data->count
@@ -141,7 +139,7 @@ int main(int argc, char *argv[]) {
 
                 // Fork Teller and process request
                 printf("From server acc id - %s",  req->account_id);
-                pid_t tid = Teller(strcmp(req->action, "deposit") == 0 ? deposit : withdraw, &req);
+                pid_t tid = Teller(strcmp(req->action, "deposit") == 0 ? deposit : withdraw, req);
                 printf( "-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
                 waitpid(tid, NULL, 0); // Wait for Teller to finish
             }
