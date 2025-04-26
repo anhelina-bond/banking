@@ -47,9 +47,10 @@ void withdraw(void *arg);
 
 extern SharedData *shared_data;
 extern sem_t *sem;
-extern int client_counter;
+// extern int client_counter;
 void handle_signal(int sig);
 void write_log(const char *id, char type, int amount, int balance);
+int get_client_number(const char *account_id);
 
 
 #endif

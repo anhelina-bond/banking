@@ -7,7 +7,6 @@ sem_t *sem;
 sem_t *req_sem;
 sem_t *fifo_mutex;
 int server_fd;
-int client_counter = 0;
 const char* LOG_FILE = "AdaBank.bankLog";
 
 
@@ -118,19 +117,20 @@ int main(int argc, char *argv[]) {
                 Request *req = &req_buffer[i];
                 int client_num;
 
+                // Lock semaphore before reading shared_data->count
+                sem_wait(sem);
                 if (strcmp(req->account_id, "NEW") == 0) {
-                    // New client: assign BankID_XX based on account count
+                    // New client
                     client_num = shared_data->count + 1;
                 } else {
-                    // Existing client: extract from BankID_XX
+                    // Existent client
                     client_num = get_client_number(req->account_id);
                 }
-                client_counter = client_num;
-                // Format message with derived client number
-                teller_msgs[i] = malloc(100);
+                sem_post(sem); // Unlock immediately after reading
+
+                // Fork Teller and process request
                 pid_t tid = Teller(strcmp(req->action, "deposit") == 0 ? deposit : withdraw, &req);
                 sprintf(teller_msgs[i], "-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
-
                 waitpid(tid, NULL, 0); // Wait for Teller to finish
             }
 

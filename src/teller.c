@@ -3,7 +3,6 @@
 
 extern SharedData *shared_data;
 extern sem_t *sem;
-extern int client_counter;
 
 pid_t Teller(void (*func)(void*), void *arg) {
     pid_t pid = fork();
@@ -28,7 +27,7 @@ void deposit(void *arg) {
     for (int i = 0; i < shared_data->count; i++) {
         if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {
             shared_data->accounts[i].balance += req->amount;
-            printf("Client%02d deposited %d credits… updating log\n", client_counter, req->amount);
+            printf("Client%02d deposited %d credits… updating log\n", get_client_number(req->account_id), req->amount);
             write_log(shared_data->accounts[i].id, 'D', req->amount, shared_data->accounts[i].balance);
             found = 1;
             break;
@@ -39,7 +38,7 @@ void deposit(void *arg) {
         // Create new account
         sprintf(shared_data->accounts[shared_data->count].id, "BankID_%02d", shared_data->count+1);
         shared_data->accounts[shared_data->count].balance = req->amount;
-        printf("Client%02d served.. %s\n", client_counter, shared_data->accounts[shared_data->count].id);
+        printf("Client%02d served.. %s\n", get_client_number(req->account_id), shared_data->accounts[shared_data->count].id);
         write_log(shared_data->accounts[shared_data->count].id, 'D', req->amount, req->amount);
         shared_data->count++;
     }
@@ -55,9 +54,9 @@ void withdraw(void *arg) {
         if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {
             if (shared_data->accounts[i].balance >= req->amount) {
                 shared_data->accounts[i].balance -= req->amount;
-                printf("Client%02d withdraws %d credits… updating log… ", client_counter, req->amount);
+                printf("Client%02d withdraws %d credits… updating log… ", get_client_number(req->account_id), req->amount);
                 if (shared_data->accounts[i].balance == 0) {
-                    printf("Bye Client%02d\n", client_counter);
+                    printf("Bye Client%02d\n", get_client_number(req->account_id));
                     // Remove account
                     memmove(&shared_data->accounts[i], &shared_data->accounts[i+1], 
                            (shared_data->count - i - 1) * sizeof(Account));
@@ -70,7 +69,7 @@ void withdraw(void *arg) {
         }
         
         if (!success) {
-            printf("Client%02d withdraws %d credit.. operation not permitted.\n", client_counter, req->amount);
+            printf("Client%02d withdraws %d credit.. operation not permitted.\n", get_client_number(req->account_id), req->amount);
         }
         success = 0;
     }
