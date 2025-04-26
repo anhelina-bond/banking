@@ -34,7 +34,7 @@ typedef struct {
     char action[10];    // "deposit" or "withdraw"
     char account_id[20];
     int amount;
-    char client_fifo[5000];
+    char client_fifo[500];
     int client_sequence;    // Client's request order
 } Request;
 
