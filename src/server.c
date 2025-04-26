@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 
         if (batch_count > 0) {
             printf("-- Received %d clients from PIDClientX..\n", batch_count);
-            char **teller_msgs = malloc(batch_count * sizeof(char*));
+            // char **teller_msgs = malloc(batch_count * sizeof(char*));
 
             for (int i = 0; i < batch_count; i++) {
                 Request *req = &req_buffer[i];
@@ -130,16 +130,16 @@ int main(int argc, char *argv[]) {
 
                 // Fork Teller and process request
                 pid_t tid = Teller(strcmp(req->action, "deposit") == 0 ? deposit : withdraw, &req);
-                sprintf(teller_msgs[i], "-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
+                printf( "-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
                 waitpid(tid, NULL, 0); // Wait for Teller to finish
             }
 
             // Print all buffered Teller messages
-            for (int i = 0; i < batch_count; i++) {
-                printf("%s", teller_msgs[i]);
-                free(teller_msgs[i]);
-            }
-            free(teller_msgs);
+            // for (int i = 0; i < batch_count; i++) {
+            //     printf("%s", teller_msgs[i]);
+            //     free(teller_msgs[i]);
+            // }
+            // free(teller_msgs);
         }
     }
 }
