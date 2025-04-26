@@ -81,12 +81,14 @@ int main(int argc, char *argv[]) {
     // After sending all requests:
     // Read responses from client FIFO
     printf("Waiting for responses...\n");
-    for (int i = 0; i < cmd_count; i++) {  // Loop for each expected response
-        int resp_fd = open(client_fifo, O_RDONLY); // Block until server opens FIFO
+    for (int i = 0; i < cmd_count; i++) {
+        int resp_fd = open(client_fifo, O_RDONLY);
         char response[256];
         ssize_t bytes_read = read(resp_fd, response, sizeof(response));
         if (bytes_read > 0) {
             printf("%.*s\n", (int)bytes_read, response);
+        } else if (bytes_read == 0) {
+            printf("No response received for operation %d.\n", i + 1);
         } else {
             perror("read");
         }
