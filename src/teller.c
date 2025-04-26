@@ -35,13 +35,18 @@ void deposit(void *arg) {
     }
     
     if (!found && strcmp(req->account_id, "NEW") == 0) {
-        // Create new account
+        // Assign client_num under semaphore
         int new_client_num = shared_data->count + 1;
+        if (new_client_num >= MAX_ACCOUNTS) {
+            fprintf(stderr, "Maximum accounts reached!\n");
+            sem_post(sem);
+            exit(1);
+        }
         sprintf(shared_data->accounts[shared_data->count].id, "BankID_%02d", new_client_num);
         shared_data->accounts[shared_data->count].balance = req->amount;
-        printf("Client%02d served.. %s\n", new_client_num, shared_data->accounts[shared_data->count].id);
-        write_log(shared_data->accounts[shared_data->count].id, 'D', req->amount, req->amount);
-        shared_data->count++;
+        shared_data->count++; // Atomic increment
+        printf("Client%02d served.. %s\n", new_client_num, shared_data->accounts[shared_data->count - 1].id);
+        write_log(shared_data->accounts[shared_data->count - 1].id, 'D', req->amount, req->amount);
     }
     sem_post(sem);
 }
