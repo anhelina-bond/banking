@@ -64,7 +64,7 @@ void deposit(void *arg) {
     }    
     printf(response);
     // Write response to client FIFO
-    int client_fd = open(req->client_fifo, O_WRONLY);
+    int client_fd = open(req->client_fifo, O_WRONLY| O_APPEND);
     if (client_fd != -1) {
         write(client_fd, response, strlen(response) + 1);
         close(client_fd);
@@ -110,7 +110,7 @@ void withdraw(void *arg) {
     }
     printf(response);
     // Write response to client FIFO
-    int client_fd = open(req->client_fifo, O_WRONLY);
+    int client_fd = open(req->client_fifo, O_WRONLY | O_APPEND);
     if (client_fd != -1) {
         write(client_fd, response, strlen(response) + 1);
         close(client_fd);
