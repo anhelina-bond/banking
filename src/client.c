@@ -39,15 +39,10 @@ int main(int argc, char *argv[]) {
     rewind(file);
 
     // Open server FIFO
-    sem_t *fifo_mutex = sem_open(FIFO_MUTEX, 0); // Add this
-    if (fifo_mutex == SEM_FAILED) {
-        perror("sem_open (fifo_mutex)");
-        exit(1);
-    }
-
-    sem_t *req_sem = sem_open(REQ_SEM, 0);
-    if (req_sem == SEM_FAILED) {
-        perror("sem_open (client)");
+    sem_t *mutex = sem_open(FIFO_MUTEX, 0);
+    if (mutex == SEM_FAILED) {
+        perror("sem_open (client mutex)");
+        unlink(client_fifo);
         exit(1);
     }
 
@@ -67,16 +62,20 @@ int main(int argc, char *argv[]) {
         req.client_sequence = client_num; // Track request order
 
         // Send request to server
-        sem_wait(fifo_mutex);
+        sem_wait(mutex);
         write(server_fd, &req, sizeof(Request));
-        sem_post(fifo_mutex);
+        sem_post(mutex);
 
         printf("Client%02d connected..%s %d credits\n", client_num, action, req.amount);
         client_num++;
     }
     fclose(file);
     close(server_fd);
-    
+    sem_t *req_sem = sem_open(REQ_SEM, 0);
+    if (req_sem == SEM_FAILED) {
+        perror("sem_open (client)");
+        exit(1);
+    }
     sem_post(req_sem);  // Signal server
     sem_close(req_sem);
 
@@ -85,22 +84,29 @@ int main(int argc, char *argv[]) {
     // Then read the result:
     // After sending all requests
     // Read responses from client FIFO
- 
     printf("Waiting for responses...\n");
-    for (int i = 0; i < cmd_count; i++) {
-        int resp_fd = open(client_fifo, O_RDONLY);
-        char response[256];
-        ssize_t bytes_read = read(resp_fd, response, sizeof(response));
+    int resp_fd = open(client_fifo, O_RDONLY); // Open ONCE
+    int responses_received = 0;
+    char response[256];
+    ssize_t bytes_read;
+
+    while (responses_received < cmd_count) {
+        bytes_read = read(resp_fd, response, sizeof(response));
         if (bytes_read > 0) {
             printf("%.*s\n", (int)bytes_read, response);
+            responses_received++;
+        } else if (bytes_read == 0) {
+            // Server closed FIFO early; break after timeout or retry
+            sleep(1); // Optional: Add a small delay
         } else {
             perror("read");
+            break;
         }
-        close(resp_fd);
     }
+    close(resp_fd);
     unlink(client_fifo);
     
-    sem_close(fifo_mutex);
+    sem_close(mutex);
     printf("exiting..\n");
     return 0;
 }
