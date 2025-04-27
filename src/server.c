@@ -31,14 +31,7 @@ int handle_client(Request *req) {
     char response[256];
     int client_num;
     int found = 0;
-    // Open FIFO once per client session
-    int client_fd = open(req->client_fifo, O_WRONLY);
-    if (client_fd == -1) {
-        perror("open");
-        sem_post(sem);
-        free(req);
-        return -1;
-    }
+    
     sem_wait(sem);
     
     // New client
@@ -64,7 +57,18 @@ int handle_client(Request *req) {
     }   
     sem_post(sem); 
     snprintf(response, sizeof(response), "Client%02d connected..%s %d credits\n", client_num, req->action, req->amount);
+
+    // Open FIFO once per request
+    sem_wait(fifo_mutex);
+    int client_fd = open(req->client_fifo, O_WRONLY);
+    if (client_fd == -1) {
+        perror("open");
+        sem_post(sem);
+        free(req);
+        return -1;
+    }
     write(client_fd, response, strlen(response) + 1);
+    sem_post(fifo_mutex);
     close(client_fd);
     return client_num;
 }
@@ -181,7 +185,7 @@ int main(int argc, char *argv[]) {
                 int client_num = handle_client(req);
 
                 pid_t tid = Teller(strcmp(req->action, "deposit") == 0 ? deposit : withdraw, req);
-                printf("-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
+                printf("\n-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
                 waitpid(tid, NULL, 0);
             }
         }
