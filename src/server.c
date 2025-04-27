@@ -10,23 +10,6 @@ sem_t *fifo_mutex;
 int server_fd;
 const char* LOG_FILE = "AdaBank.bankLog";
 
-
-int get_client_number(const char *account_id) {
-    if (strncmp(account_id, "BankID_", 7) != 0) {
-        // Invalid format: treat as new client and increment client_count
-        return (++shared_data->client_count);
-    }
-    const char *num_part = account_id + 7;
-    for (int i = 0; num_part[i] != '\0'; i++) {
-        if (!isdigit(num_part[i])) {
-            // Invalid characters: treat as new client
-            return (++shared_data->client_count);
-        }
-    }
-    // Valid existing account: parse the client number from the ID
-    return atoi(num_part);
-}
-
 int handle_client(Request *req) {
     char response[256];
     int client_num;
