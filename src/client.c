@@ -4,6 +4,8 @@
 int server_fd;
 int resp_fd;
 char client_fifo[50];
+sem_t *mutex;
+sem_t *req_sem;
 
 void cleanup() {
     printf("\nSignal received closing active Client\n");
@@ -68,13 +70,13 @@ int main(int argc, char *argv[]) {
     rewind(file);
 
     // Open server FIFO
-    sem_t *mutex = sem_open(FIFO_MUTEX, 0);
+    mutex = sem_open(FIFO_MUTEX, 0);
     if (mutex == SEM_FAILED) {
         perror("sem_open (client mutex)");
         unlink(client_fifo);
         exit(1);
     }
-    sem_t *req_sem = sem_open(REQ_SEM, 0);
+    req_sem = sem_open(REQ_SEM, 0);
     if (req_sem == SEM_FAILED) {
         perror("sem_open (client)");
         exit(1);
