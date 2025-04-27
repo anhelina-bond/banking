@@ -3,6 +3,7 @@
 
 extern SharedData *shared_data;
 extern sem_t *sem;
+static int client_fd = -1; // Persistent descriptor for the client FIFO
 
 pid_t Teller(void (*func)(void*), void *arg) {
     pid_t pid = fork();
@@ -23,6 +24,17 @@ void deposit(void *arg) {
     sem_wait(sem);
     char response[256];
     int success = 0;
+
+    // Open FIFO once per client session
+    if (client_fd == -1) {
+        client_fd = open(req->client_fifo, O_WRONLY); // No O_APPEND needed
+        if (client_fd == -1) {
+            perror("open");
+            sem_post(sem);
+            free(req);
+            return;
+        }
+    }
     
     if(strcmp(req->account_id, "NEW") == 0) {
         // Assign client_num under semaphore
@@ -64,11 +76,9 @@ void deposit(void *arg) {
     }    
     printf(response);
     // Write response to client FIFO
-    int client_fd = open(req->client_fifo, O_WRONLY| O_APPEND);
-    if (client_fd != -1) {
-        write(client_fd, response, strlen(response) + 1);
-        close(client_fd);
-    }
+    
+    write(client_fd, response, strlen(response) + 1);
+    
     sem_post(sem);
     free(req);
 }
@@ -79,6 +89,17 @@ void withdraw(void *arg) {
     char response[256];
     int success = 0;
     int client_num = get_client_number(req->account_id);
+
+    // Open FIFO once per client session
+    if (client_fd == -1) {
+        client_fd = open(req->client_fifo, O_WRONLY); // No O_APPEND needed
+        if (client_fd == -1) {
+            perror("open");
+            sem_post(sem);
+            free(req);
+            return;
+        }
+    }
 
     for (int i = 0; i < shared_data->count; i++) {
         if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {            // client found in database
@@ -110,11 +131,8 @@ void withdraw(void *arg) {
     }
     printf(response);
     // Write response to client FIFO
-    int client_fd = open(req->client_fifo, O_WRONLY | O_APPEND);
-    if (client_fd != -1) {
-        write(client_fd, response, strlen(response) + 1);
-        close(client_fd);
-    }
+    write(client_fd, response, strlen(response) + 1);
+    
     sem_post(sem);
     free(req);
 }

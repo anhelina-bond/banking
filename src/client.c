@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     // Create client-specific FIFO
     char client_fifo[50];
     snprintf(client_fifo, sizeof(client_fifo), "/tmp/client_%d", getpid());
+    printf("Client fifo name: %s\n", client_fifo);
     mkfifo(client_fifo, 0666); // Create FIFO
 
     printf("Reading %s..\n", argv[1]);
