@@ -29,17 +29,20 @@ void deposit(void *arg) {
         // Assign client_num under semaphore
         int new_client_num = shared_data->count + 1;
         if (new_client_num >= MAX_ACCOUNTS) {
+            printf("Client%02d: Deposit failed. Maximum accounts reached!", shared_data->client_count);
             snprintf(response, sizeof(response), 
-                "Client%02d: Deposit failed. Maximum accounts reached!", shared_data->client_count);
+                "--Client%02d: Deposit failed. Maximum accounts reached!", shared_data->client_count);
         } else {
             sprintf(shared_data->accounts[shared_data->count].id, "BankID_%02d", new_client_num);
             shared_data->accounts[shared_data->count].balance = req->amount;
             
-            snprintf(response, sizeof(response), 
-                "Client%02d: Deposited %d credits. New account: %s", 
+            printf("--Client%02d: Deposited %d credits. New account: %s... updating log", 
                 shared_data->client_count, req->amount, shared_data->accounts[shared_data->count].id);
+            snprintf(response, sizeof(response), 
+                "--Client%02d served.. %s", 
+                shared_data->client_count,  shared_data->accounts[shared_data->count].id);
             success = 1;
-            write_log(shared_data->accounts[shared_data->count - 1].id, 'D', req->amount, req->amount);
+            write_log(shared_data->accounts[shared_data->count].id, 'D', req->amount, req->amount);
             shared_data->count +=1; // Atomic increment
         }
     } else {
@@ -47,21 +50,25 @@ void deposit(void *arg) {
         for (int i = 0; i < shared_data->count; i++) {
             if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {
                 shared_data->accounts[i].balance += req->amount;
-                snprintf(response, sizeof(response), 
-                    "Client%02d: Deposited %d credits. New balance: %d", 
+                printf("Client%02d: Deposited %d credits. New balance: %d... updating log", 
                     shared_data->accounts[i].client_id, req->amount, shared_data->accounts[i].balance);
+                snprintf(response, sizeof(response), 
+                    "Client%02d served.. New balance: %d", 
+                    shared_data->accounts[i].client_id, shared_data->accounts[i].balance);
                 success = 1;
                 write_log(shared_data->accounts[i].id, 'D', req->amount, shared_data->accounts[i].balance);
                 break;
             }
         }
         if(!success) {
+            printf("Client%02d: Deposit failed. Invalid account: %s", 
+                shared_data->client_count, req->account_id);
             snprintf(response, sizeof(response), 
                 "Client%02d: Deposit failed. Invalid account: %s", 
                 shared_data->client_count, req->account_id);
         }
     }    
-    printf(response);
+
     // Write response to client FIFO
     sem_wait(fifo_mutex);
     int client_fd = open(req->client_fifo, O_WRONLY);
@@ -86,16 +93,21 @@ void withdraw(void *arg) {
                 shared_data->accounts[i].balance -= req->amount;
                 write_log(shared_data->accounts[i].id, 'W', req->amount, shared_data->accounts[i].balance);
                 if (shared_data->accounts[i].balance == 0) {
-                    snprintf(response, sizeof(response), 
-                        "Client%02d: Withdrew %d credits. Account closed.", 
+                    printf("Client%02d: Withdrew %d credits. Account closed... updating log", 
                         shared_data->accounts[i].client_id, req->amount);
+                    snprintf(response, sizeof(response), 
+                        "Client%02d served.. account closed", 
+                        shared_data->accounts[i].client_id);
                     // Remove account
                     memmove(&shared_data->accounts[i], &shared_data->accounts[i + 1], 
                            (shared_data->count - i - 1) * sizeof(Account));
                 } else {
-                    snprintf(response, sizeof(response), 
-                        "Client%02d: Withdrew %d credits. New balance: %d", 
+                    snprintf(
+                        "Client%02d: Withdrew %d credits. New balance: %d... updating log", 
                         shared_data->accounts[i].client_id, req->amount, shared_data->accounts[i].balance);
+                    snprintf(response, sizeof(response), 
+                        "Client%02d served.. New balance: %d... updating log", 
+                        shared_data->accounts[i].client_id,  shared_data->accounts[i].balance);
                 }
                 success = 1;
                 break;
@@ -104,10 +116,10 @@ void withdraw(void *arg) {
     }
 
     if (!success) {
+        printf( "Client%02d: Withdrawal failed. Invalid operation.", shared_data->client_count);
         snprintf(response, sizeof(response), 
             "Client%02d: Withdrawal failed. Invalid operation.", shared_data->client_count);
     }
-    printf(response);
     // Write response to client FIFO
     sem_wait(fifo_mutex);
     int client_fd = open(req->client_fifo, O_WRONLY);
