@@ -12,20 +12,57 @@ const char* LOG_FILE = "AdaBank.bankLog";
 
 
 int get_client_number(const char *account_id) {
-    // Check if the account ID starts with "BankID_"
     if (strncmp(account_id, "BankID_", 7) != 0) {
-        return shared_data->count + 1;
+        // Invalid format: treat as new client and increment client_count
+        return (++shared_data->client_count);
     }
-    // Extract the part after "BankID_"
     const char *num_part = account_id + 7;
-    // Check if the remaining characters are all digits
     for (int i = 0; num_part[i] != '\0'; i++) {
         if (!isdigit(num_part[i])) {
-            return shared_data->count + 1;
+            // Invalid characters: treat as new client
+            return (++shared_data->client_count);
         }
     }
-    // Convert to integer and return
+    // Valid existing account: parse the client number from the ID
     return atoi(num_part);
+}
+
+int handle_client(Request *req) {
+    char response[256];
+    static int client_fd = -1; // Persistent descriptor for the client FIFO
+    int client_num;
+    // Open FIFO once per client session
+    if (client_fd == -1) {
+        client_fd = open(req->client_fifo, O_WRONLY); // No O_APPEND needed
+        if (client_fd == -1) {
+            perror("open");
+            sem_post(sem);
+            free(req);
+            return;
+        }
+    }
+    sem_wait(sem);
+    
+    // New client
+    if (strcmp(req->account_id, "NEW")) {
+        shared_data->client_count += 1;
+        shared_data->accounts[shared_data->count].client_id = shared_data->client_count;
+        client_num = shared_data->client_count;
+    }
+
+    // Check if account ID is in db
+    for (int i = 0; i < shared_data->count; i++) {
+        if (strcmp(shared_data->accounts[i].id, req->account_id) == 0){
+            client_num = shared_data->accounts[i].client_id;
+            break;
+        }
+    }
+    // Client not found or invalid ID
+    shared_data->client_count += 1;
+    client_num = shared_data->client_count;
+    snprintf(response, "Client%02d connected..%s %d credits\n", client_num, action, req.amount);
+    write(client_fd, response, strlen(response) + 1);
+    sem_post(sem);
 }
 
 
@@ -98,6 +135,7 @@ int main(int argc, char *argv[]) {
     }
     // Explicitly initialize count to 0
     shared_data->count = 0;
+    shared_data->client_count = 0;
 
     // Semaphores setup
     sem = sem_open(SEM_NAME, O_CREAT, 0666, 1);
@@ -134,26 +172,13 @@ int main(int argc, char *argv[]) {
 
         if (batch_count > 0) {
             printf("-- Received %d clients from PIDClientX..\n", batch_count);
-
             for (int i = 0; i < batch_count; i++) {
                 Request *req = req_buffer[i];
-                int client_num;
+                int client_num = handle_client(req);
 
-                // Lock semaphore before reading shared_data->count
-                sem_wait(sem);
-                if (strcmp(req->account_id, "NEW") == 0) {
-                    // New client
-                    client_num = shared_data->count + 1;
-                } else {
-                    // Existent client
-                    client_num = get_client_number(req->account_id);
-                }
-                sem_post(sem); // Unlock immediately after reading
-
-                // Fork Teller and process request
                 pid_t tid = Teller(strcmp(req->action, "deposit") == 0 ? deposit : withdraw, req);
-                printf( "-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
-                waitpid(tid, NULL, 0); // Wait for Teller to finish
+                printf("-- Teller PID%d is active serving Client%02d…\n", tid, client_num);
+                waitpid(tid, NULL, 0);
             }
         }
     }

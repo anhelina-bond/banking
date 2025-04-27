@@ -3,7 +3,7 @@
 
 extern SharedData *shared_data;
 extern sem_t *sem;
-static int client_fd = -1; // Persistent descriptor for the client FIFO
+
 
 pid_t Teller(void (*func)(void*), void *arg) {
     pid_t pid = fork();
@@ -24,6 +24,7 @@ void deposit(void *arg) {
     sem_wait(sem);
     char response[256];
     int success = 0;
+    static int client_fd = -1; // Persistent descriptor for the client FIFO
 
     // Open FIFO once per client session
     if (client_fd == -1) {
@@ -45,38 +46,35 @@ void deposit(void *arg) {
         } else {
             sprintf(shared_data->accounts[shared_data->count].id, "BankID_%02d", new_client_num);
             shared_data->accounts[shared_data->count].balance = req->amount;
-            shared_data->count +=1; // Atomic increment
+            
             snprintf(response, sizeof(response), 
                 "Client%02d: Deposited %d credits. New account: %s", 
-                new_client_num, req->amount, shared_data->accounts[shared_data->count - 1].id);
+                shared_data->accounts[shared_data->count].client_id, req->amount, shared_data->accounts[shared_data->count].id);
             success = 1;
             write_log(shared_data->accounts[shared_data->count - 1].id, 'D', req->amount, req->amount);
+            shared_data->count +=1; // Atomic increment
         }
     } else {
         // Case 2/3: Existing or invalid account
         for (int i = 0; i < shared_data->count; i++) {
             if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {
                 shared_data->accounts[i].balance += req->amount;
-                int client_num = get_client_number(shared_data->accounts[i].id);
                 snprintf(response, sizeof(response), 
                     "Client%02d: Deposited %d credits. New balance: %d", 
-                    client_num, req->amount, shared_data->accounts[i].balance);
+                    shared_data->accounts[i].client_id, req->amount, shared_data->accounts[i].balance);
                 success = 1;
                 write_log(shared_data->accounts[i].id, 'D', req->amount, shared_data->accounts[i].balance);
                 break;
             }
         }
         if(!success) {
-            int client_num = get_client_number(req->account_id);
             snprintf(response, sizeof(response), 
                 "Client%02d: Deposit failed. Invalid account: %s", 
-                client_num, req->account_id);
-            shared_data->count +=1; // Atomic increment
+                shared_data->client_count, req->account_id);
         }
     }    
     printf(response);
     // Write response to client FIFO
-    
     write(client_fd, response, strlen(response) + 1);
     
     sem_post(sem);
@@ -88,7 +86,7 @@ void withdraw(void *arg) {
     sem_wait(sem);
     char response[256];
     int success = 0;
-    int client_num = get_client_number(req->account_id);
+    static int client_fd = -1; // Persistent descriptor for the client FIFO
 
     // Open FIFO once per client session
     if (client_fd == -1) {
@@ -110,13 +108,14 @@ void withdraw(void *arg) {
                     // Remove account
                     memmove(&shared_data->accounts[i], &shared_data->accounts[i + 1], 
                            (shared_data->count - i - 1) * sizeof(Account));
+                    shared_data->client_count--;
                         snprintf(response, sizeof(response), 
                             "Client%02d: Withdrew %d credits. Account closed.", 
-                            client_num, req->amount);
+                            shared_data->accounts[i].client_id, req->amount);
                 } else {
                     snprintf(response, sizeof(response), 
                         "Client%02d: Withdrew %d credits. New balance: %d", 
-                        client_num, req->amount, shared_data->accounts[i].balance);
+                        shared_data->accounts[i].client_id, req->amount, shared_data->accounts[i].balance);
                 }
                 success = 1;
                 break;
@@ -126,8 +125,7 @@ void withdraw(void *arg) {
 
     if (!success) {
         snprintf(response, sizeof(response), 
-            "Client%02d: Withdrawal failed. Invalid operation.", client_num);
-        shared_data->count +=1; // Atomic increment
+            "Client%02d: Withdrawal failed. Invalid operation.", shared_data->client_count);
     }
     printf(response);
     // Write response to client FIFO

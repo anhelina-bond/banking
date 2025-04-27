@@ -22,12 +22,14 @@
 
 typedef struct {
     char id[20];
+    int client_id;
     int balance;
 } Account;
 
 typedef struct {
     Account accounts[MAX_ACCOUNTS];
     int count;
+    int client_count;
 } SharedData;
 
 typedef struct {
@@ -52,6 +54,7 @@ extern sem_t *sem;
 void handle_signal(int sig);
 void write_log(const char *id, char type, int amount, int balance);
 int get_client_number(const char *account_id);
+int handle_client(Request *req);
 
 
 #endif
