@@ -29,18 +29,9 @@ int get_client_number(const char *account_id) {
 
 int handle_client(Request *req) {
     char response[256];
-    static int client_fd = -1; // Persistent descriptor for the client FIFO
     int client_num;
-    // Open FIFO once per client session
-    if (client_fd == -1) {
-        client_fd = open(req->client_fifo, O_WRONLY); // No O_APPEND needed
-        if (client_fd == -1) {
-            perror("open");
-            sem_post(sem);
-            free(req);
-            return -1;
-        }
-    }
+    int found = 0;
+
     sem_wait(sem);
     
     // New client
@@ -48,20 +39,24 @@ int handle_client(Request *req) {
         shared_data->client_count += 1;
         shared_data->accounts[shared_data->count].client_id = shared_data->client_count;
         client_num = shared_data->client_count;
-    }
-
-    // Check if account ID is in db
-    for (int i = 0; i < shared_data->count; i++) {
-        if (strcmp(shared_data->accounts[i].id, req->account_id) == 0){
-            client_num = shared_data->accounts[i].client_id;
-            break;
+    } else {
+        // Check if account ID is in db
+        for (int i = 0; i < shared_data->count; i++) {
+            if (strcmp(shared_data->accounts[i].id, req->account_id) == 0){
+                found = 1;
+                client_num = shared_data->accounts[i].client_id;
+                break;
+            }
         }
-    }
-    // Client not found or invalid ID
-    shared_data->client_count += 1;
-    client_num = shared_data->client_count;
+        if (!found) {
+            // Client not found or invalid ID
+            shared_data->client_count += 1;
+            client_num = shared_data->client_count;
+        }
+        
+    }    
     snprintf(response, sizeof(response), "Client%02d connected..%s %d credits\n", client_num, req->action, req->amount);
-    write(client_fd, response, strlen(response) + 1);
+    write(req->client_fd, response, strlen(response) + 1);
     sem_post(sem);
     return client_num;
 }

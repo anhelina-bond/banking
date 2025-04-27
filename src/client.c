@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 
     printf("%d clients to connect.. creating clients..\n", cmd_count);
     printf("Connected to Adabank..\n");
-
+    int client_fd = open(client_fifo, O_WRONLY);
     int client_num = 1;
     while (fgets(line, sizeof(line), file)) {
         Request req;
@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
         strcpy(req.account_id, (strcmp(id, "N") == 0) ? "NEW" : id);
         strcpy(req.action, action);
         strncpy(req.client_fifo, client_fifo, sizeof(req.client_fifo));
+        req.client_fd = client_fd;
         req.client_sequence = client_num; // Track request order
 
         // Send request to server
