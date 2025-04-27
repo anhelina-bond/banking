@@ -56,6 +56,7 @@ int handle_client(Request *req) {
         
     }    
     snprintf(response, sizeof(response), "Client%02d connected..%s %d credits\n", client_num, req->action, req->amount);
+    printf("Response from handle client: %s", response);
     write(req->client_fd, response, strlen(response) + 1);
     sem_post(sem);
     return client_num;
