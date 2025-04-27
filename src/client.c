@@ -84,6 +84,14 @@ int main(int argc, char *argv[]) {
     // Then read the result:
     // After sending all requests
     // Read responses from client FIFO
+    printf("Waiting for responses...\n");
+    int resp_fd = open(client_fifo, O_RDONLY); // Open once
+    if (resp_fd == -1) {
+        perror("open");
+        unlink(client_fifo);
+        exit(1);
+    }
+
     // Read all responses in a single session
     char buffer[256];
     int expected_responses = cmd_count * 2; // 2 responses per command
@@ -102,7 +110,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-close(resp_fd);
+    close(resp_fd);
     
     // for (int i = 0; i < cmd_count*2; i++) {
     //     int resp_fd = open(client_fifo, O_RDONLY);
