@@ -3,7 +3,7 @@
 
 extern SharedData *shared_data;
 extern sem_t *sem;
-
+extern sem_t *fifo_mutex;
 
 pid_t Teller(void (*func)(void*), void *arg) {
     pid_t pid = fork();
@@ -24,13 +24,6 @@ void deposit(void *arg) {
     sem_wait(sem);
     char response[256];
     int success = 0;
-    int client_fd = open(req->client_fifo, O_WRONLY);
-    if (client_fd == -1) {
-        perror("open");
-        sem_post(sem);
-        free(req);
-        exit(1);
-    }
     
     if(strcmp(req->account_id, "NEW") == 0) {
         // Assign client_num under semaphore
@@ -70,8 +63,17 @@ void deposit(void *arg) {
     }    
     printf(response);
     // Write response to client FIFO
+    sem_wait(fifo_mutex);
+    int client_fd = open(req->client_fifo, O_WRONLY);
+    if (client_fd == -1) {
+        perror("open");
+        sem_post(sem);
+        free(req);
+        exit(1);
+    }
     write(client_fd, response, strlen(response) + 1);
     close(client_fd);
+    sem_post(fifo_mutex);
     sem_post(sem);
     free(req);
 }
@@ -81,13 +83,7 @@ void withdraw(void *arg) {
     sem_wait(sem);
     char response[256];
     int success = 0;
-    int client_fd = open(req->client_fifo, O_WRONLY);
-    if (client_fd == -1) {
-        perror("open");
-        sem_post(sem);
-        free(req);
-        exit(1);
-    }
+   
 
     for (int i = 0; i < shared_data->count; i++) {
         if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {            // client found in database
@@ -118,8 +114,17 @@ void withdraw(void *arg) {
     }
     printf(response);
     // Write response to client FIFO
+    sem_wait(fifo_mutex);
+    int client_fd = open(req->client_fifo, O_WRONLY);
+    if (client_fd == -1) {
+        perror("open");
+        sem_post(sem);
+        free(req);
+        exit(1);
+    }
     write(client_fd, response, strlen(response) + 1);
     close(client_fd);
+    sem_post(fifo_mutex);
     sem_post(sem);
     free(req);
 }

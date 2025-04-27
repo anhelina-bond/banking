@@ -1,5 +1,6 @@
 #include "bank.h"
 #include <sys/stat.h>
+extern sem_t *fifo_mutex;
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -39,12 +40,7 @@ int main(int argc, char *argv[]) {
     rewind(file);
 
     // Open server FIFO
-    sem_t *mutex = sem_open(FIFO_MUTEX, 0);
-    if (mutex == SEM_FAILED) {
-        perror("sem_open (client mutex)");
-        unlink(client_fifo);
-        exit(1);
-    }
+    
     sem_t *req_sem = sem_open(REQ_SEM, 0);
     if (req_sem == SEM_FAILED) {
         perror("sem_open (client)");
@@ -67,9 +63,9 @@ int main(int argc, char *argv[]) {
         req.client_sequence = client_num; // Track request order
 
         // Send request to server
-        sem_wait(mutex);
+        sem_wait(fifo_mutex);
         write(server_fd, &req, sizeof(Request));
-        sem_post(mutex);
+        sem_post(fifo_mutex);
 
         printf("Client%02d connected..%s %d credits\n", client_num, action, req.amount);
         client_num++;
@@ -100,7 +96,7 @@ int main(int argc, char *argv[]) {
     }
     unlink(client_fifo);
     
-    sem_close(mutex);
+    sem_close(fifo_mutex);
     printf("exiting..\n");
     return 0;
 }
