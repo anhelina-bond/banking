@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    int server_fd = open(argv[2], O_WRONLY | O_NONBLOCK);
+    int server_fd = open(argv[2], O_WRONLY );
     if (server_fd == -1) {
         if (errno == ENOENT) {
             fprintf(stderr, "Error: Server is not running.\n");
@@ -69,7 +69,6 @@ int main(int argc, char *argv[]) {
         // Send request to server
         sem_wait(mutex);
         write(server_fd, &req, sizeof(Request));
-        sem_post(req_sem);  // Signal server
         sem_post(mutex);
 
         printf("Client%02d connected..%s %d credits\n", client_num, action, req.amount);
@@ -78,6 +77,7 @@ int main(int argc, char *argv[]) {
     fclose(file);
     close(server_fd);
     
+    sem_post(req_sem);  // Signal server
     sem_close(req_sem);
 
 
