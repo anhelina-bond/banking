@@ -38,7 +38,7 @@ int handle_client(Request *req) {
             perror("open");
             sem_post(sem);
             free(req);
-            return;
+            return -1;
         }
     }
     sem_wait(sem);
