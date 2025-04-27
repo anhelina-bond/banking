@@ -52,7 +52,6 @@ extern sem_t *sem;
 extern sem_t *fifo_mutex;
 void handle_signal(int sig);
 void write_log(const char *id, char type, int amount, int balance);
-int get_client_number(const char *account_id);
 int handle_client(Request *req);
 
 

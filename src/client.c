@@ -1,7 +1,6 @@
 #include "bank.h"
 #include <sys/stat.h>
 
-int server_fd;
 int resp_fd;
 char client_fifo[50];
 sem_t *mutex;
@@ -36,7 +35,7 @@ int main(int argc, char *argv[]) {
 
     signal(SIGINT, handle_signal);
 
-    server_fd = open(argv[2], O_WRONLY | O_NONBLOCK);
+    int server_fd; = open(argv[2], O_WRONLY | O_NONBLOCK);
     if (server_fd == -1) {
         if (errno == ENOENT) {
             fprintf(stderr, "Error: Server is not running.\n");
