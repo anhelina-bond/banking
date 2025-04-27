@@ -9,9 +9,7 @@ sem_t *req_sem;
 void cleanup() {
     printf("\nSignal received closing active Client\n");
     sem_close(req_sem);
-    sem_unlink(REQ_SEM);
     sem_close(mutex);
-    sem_unlink(FIFO_MUTEX);
     close(resp_fd);
     unlink(client_fifo);
     printf("Removing Client FIFO…\n");
