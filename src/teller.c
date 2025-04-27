@@ -81,6 +81,7 @@ void withdraw(void *arg) {
     sem_wait(sem);
     char response[256];
     int success = 0;
+    int client_fd = open(req->client_fifo, O_WRONLY);
     if (client_fd == -1) {
         perror("open");
         sem_post(sem);
