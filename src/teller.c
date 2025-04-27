@@ -71,7 +71,7 @@ void deposit(void *arg) {
     printf(response);
     // Write response to client FIFO
     write(client_fd, response, strlen(response) + 1);
-    
+    close(client_fd);
     sem_post(sem);
     free(req);
 }
@@ -119,7 +119,7 @@ void withdraw(void *arg) {
     printf(response);
     // Write response to client FIFO
     write(client_fd, response, strlen(response) + 1);
-    
+    close(client_fd);
     sem_post(sem);
     free(req);
 }

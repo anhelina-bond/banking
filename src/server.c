@@ -61,10 +61,11 @@ int handle_client(Request *req) {
             client_num = shared_data->client_count;
         }
         
-    }    
+    }   
+    sem_post(sem); 
     snprintf(response, sizeof(response), "Client%02d connected..%s %d credits\n", client_num, req->action, req->amount);
     write(client_fd, response, strlen(response) + 1);
-    sem_post(sem);
+    close(client_fd);
     return client_num;
 }
 
