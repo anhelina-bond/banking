@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     sem_unlink(FIFO_MUTEX); // Cleanup previous instances
-    fifo_mutex = sem_open(FIFO_MUTEX, O_CREAT | O_EXCL, 0666, 1);
+    fifo_mutex = sem_open(FIFO_MUTEX, O_CREAT, 0666, 1);
     if (fifo_mutex == SEM_FAILED) {
         perror("sem_open (fifo_mutex)");
         exit(1);

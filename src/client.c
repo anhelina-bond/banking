@@ -1,6 +1,5 @@
 #include "bank.h"
 #include <sys/stat.h>
-extern sem_t *fifo_mutex;
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -40,6 +39,11 @@ int main(int argc, char *argv[]) {
     rewind(file);
 
     // Open server FIFO
+    sem_t *fifo_mutex = sem_open(FIFO_MUTEX, 0); // Add this
+    if (fifo_mutex == SEM_FAILED) {
+        perror("sem_open (fifo_mutex)");
+        exit(1);
+    }
     
     sem_t *req_sem = sem_open(REQ_SEM, 0);
     if (req_sem == SEM_FAILED) {
