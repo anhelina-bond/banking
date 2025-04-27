@@ -49,7 +49,7 @@ void deposit(void *arg) {
             
             snprintf(response, sizeof(response), 
                 "Client%02d: Deposited %d credits. New account: %s", 
-                shared_data->accounts[shared_data->count].client_id, req->amount, shared_data->accounts[shared_data->count].id);
+                shared_data->client_count, req->amount, shared_data->accounts[shared_data->count].id);
             success = 1;
             write_log(shared_data->accounts[shared_data->count - 1].id, 'D', req->amount, req->amount);
             shared_data->count +=1; // Atomic increment
