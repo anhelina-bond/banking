@@ -85,15 +85,23 @@ int main(int argc, char *argv[]) {
     // After sending all requests
     // Read responses from client FIFO
     printf("Waiting for responses...\n");
-    for (int i = 0; i < cmd_count*2; i++) {
-        int resp_fd = open(client_fifo, O_RDONLY);
-        char response[256];
-        ssize_t bytes_read = read(resp_fd, response, sizeof(response));
-        if (bytes_read > 0) {
-            printf("%.*s\n", (int)bytes_read, response);
-        }
-        close(resp_fd);
+    int resp_fd = open(client_fifo, O_RDONLY);
+    char buffer[500];
+    ssize_t bytes;
+    while (bytes = read(resp_fd, buffer, sizeof(buffer))) {
+        if (bytes > 0) printf("%.*s\n", (int)bytes, buffer);
     }
+    close(resp_fd);
+    
+    // for (int i = 0; i < cmd_count*2; i++) {
+    //     int resp_fd = open(client_fifo, O_RDONLY);
+    //     char response[256];
+    //     ssize_t bytes_read = read(resp_fd, response, sizeof(response));
+    //     if (bytes_read > 0) {
+    //         printf("%.*s\n", (int)bytes_read, response);
+    //     }
+    //     close(resp_fd);
+    // }
     unlink(client_fifo);
     
     sem_close(mutex);

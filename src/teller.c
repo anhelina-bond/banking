@@ -65,14 +65,10 @@ void deposit(void *arg) {
     // Write response to client FIFO
     sem_wait(fifo_mutex);
     int client_fd = open(req->client_fifo, O_WRONLY);
-    if (client_fd == -1) {
-        perror("open");
-        sem_post(sem);
-        free(req);
-        exit(1);
+    if (client_fd != -1) {
+        write(client_fd, response, strlen(response) + 1);  // Include null terminator
+        close(client_fd);
     }
-    write(client_fd, response, strlen(response) + 1);
-    close(client_fd);
     sem_post(fifo_mutex);
     sem_post(sem);
     free(req);
@@ -116,14 +112,10 @@ void withdraw(void *arg) {
     // Write response to client FIFO
     sem_wait(fifo_mutex);
     int client_fd = open(req->client_fifo, O_WRONLY);
-    if (client_fd == -1) {
-        perror("open");
-        sem_post(sem);
-        free(req);
-        exit(1);
+    if (client_fd != -1) {
+        write(client_fd, response, strlen(response) + 1);  // Include null terminator
+        close(client_fd);
     }
-    write(client_fd, response, strlen(response) + 1);
-    close(client_fd);
     sem_post(fifo_mutex);
     sem_post(sem);
     free(req);
