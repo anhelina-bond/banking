@@ -95,7 +95,6 @@ int main(int argc, char *argv[]) {
         }
         close(resp_fd);
     }
-    close(resp_fd);
     unlink(client_fifo);
     
     sem_close(mutex);
