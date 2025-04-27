@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    int server_fd = open(argv[2], O_WRONLY );
+    int server_fd = open(argv[2], O_WRONLY | O_NONBLOCK);
     if (server_fd == -1) {
         if (errno == ENOENT) {
             fprintf(stderr, "Error: Server is not running.\n");
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
         perror("sem_open (fifo_mutex)");
         exit(1);
     }
-    
+
     sem_t *req_sem = sem_open(REQ_SEM, 0);
     if (req_sem == SEM_FAILED) {
         perror("sem_open (client)");
