@@ -68,8 +68,9 @@ int handle_client(Request *req) {
         return -1;
     }
     write(client_fd, response, strlen(response) + 1);
-    sem_post(fifo_mutex);
     close(client_fd);
+    sem_post(fifo_mutex);
+    
     return client_num;
 }
 
