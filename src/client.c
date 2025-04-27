@@ -15,7 +15,6 @@ void cleanup() {
     sem_unlink(FIFO_MUTEX);
     close(resp_fd);
     unlink(client_fifo);
-    close(server_fd);
     printf("Removing Client FIFO…\n");
     printf("EXIT...\n");
     exit(0);
@@ -35,7 +34,7 @@ int main(int argc, char *argv[]) {
 
     signal(SIGINT, handle_signal);
 
-    int server_fd; = open(argv[2], O_WRONLY | O_NONBLOCK);
+    int server_fd = open(argv[2], O_WRONLY | O_NONBLOCK);
     if (server_fd == -1) {
         if (errno == ENOENT) {
             fprintf(stderr, "Error: Server is not running.\n");

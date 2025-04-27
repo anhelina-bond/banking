@@ -102,7 +102,7 @@ void withdraw(void *arg) {
                     memmove(&shared_data->accounts[i], &shared_data->accounts[i + 1], 
                            (shared_data->count - i - 1) * sizeof(Account));
                 } else {
-                    snprintf(
+                    printf(
                         "Client%02d: Withdrew %d credits. New balance: %d... updating log", 
                         shared_data->accounts[i].client_id, req->amount, shared_data->accounts[i].balance);
                     snprintf(response, sizeof(response), 
