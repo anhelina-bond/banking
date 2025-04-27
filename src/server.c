@@ -60,7 +60,7 @@ int handle_client(Request *req) {
     // Client not found or invalid ID
     shared_data->client_count += 1;
     client_num = shared_data->client_count;
-    snprintf(response, "Client%02d connected..%s %d credits\n", client_num, action, req.amount);
+    snprintf(response, sizeof(response), "Client%02d connected..%s %d credits\n", client_num, action, req->amount);
     write(client_fd, response, strlen(response) + 1);
     sem_post(sem);
 }
