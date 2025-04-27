@@ -8,7 +8,6 @@ sem_t *req_sem;
 
 void cleanup() {
     printf("\nSignal received closing active Client\n");
-    unlink(SERVER_FIFO);
     sem_close(req_sem);
     sem_unlink(REQ_SEM);
     sem_close(mutex);

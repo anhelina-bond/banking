@@ -53,7 +53,7 @@ void deposit(void *arg) {
                 printf("Client%02d: Deposited %d credits. New balance: %d... updating log", 
                     shared_data->accounts[i].client_id, req->amount, shared_data->accounts[i].balance);
                 snprintf(response, sizeof(response), 
-                    "Client%02d served.. New balance: %d", 
+                    "--Client%02d served.. New balance: %d", 
                     shared_data->accounts[i].client_id, shared_data->accounts[i].balance);
                 success = 1;
                 write_log(shared_data->accounts[i].id, 'D', req->amount, shared_data->accounts[i].balance);
@@ -64,7 +64,7 @@ void deposit(void *arg) {
             printf("Client%02d: Deposit failed. Invalid account: %s", 
                 shared_data->client_count, req->account_id);
             snprintf(response, sizeof(response), 
-                "Client%02d: Deposit failed. Invalid account: %s", 
+                "--Client%02d: Deposit failed. Invalid account: %s", 
                 shared_data->client_count, req->account_id);
         }
     }    
@@ -96,7 +96,7 @@ void withdraw(void *arg) {
                     printf("Client%02d: Withdrew %d credits. Account closed... updating log", 
                         shared_data->accounts[i].client_id, req->amount);
                     snprintf(response, sizeof(response), 
-                        "Client%02d served.. account closed", 
+                        "--Client%02d served.. account closed", 
                         shared_data->accounts[i].client_id);
                     // Remove account
                     memmove(&shared_data->accounts[i], &shared_data->accounts[i + 1], 
@@ -106,7 +106,7 @@ void withdraw(void *arg) {
                         "Client%02d: Withdrew %d credits. New balance: %d... updating log", 
                         shared_data->accounts[i].client_id, req->amount, shared_data->accounts[i].balance);
                     snprintf(response, sizeof(response), 
-                        "Client%02d served.. New balance: %d... updating log", 
+                        "--Client%02d served.. New balance: %d... updating log", 
                         shared_data->accounts[i].client_id,  shared_data->accounts[i].balance);
                 }
                 success = 1;
@@ -118,7 +118,7 @@ void withdraw(void *arg) {
     if (!success) {
         printf( "Client%02d: Withdrawal failed. Invalid operation.", shared_data->client_count);
         snprintf(response, sizeof(response), 
-            "Client%02d: Withdrawal failed. Invalid operation.", shared_data->client_count);
+            "--Client%02d: Withdrawal failed. Invalid operation.", shared_data->client_count);
     }
     // Write response to client FIFO
     sem_wait(fifo_mutex);
