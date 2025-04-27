@@ -45,7 +45,7 @@ int handle_client(Request *req) {
     sem_wait(sem);
     
     // New client
-    if (strcmp(req->account_id, "NEW")) {
+    if (strcmp(req->account_id, "NEW") == 0) {
         shared_data->client_count += 1;
         shared_data->accounts[shared_data->count].client_id = shared_data->client_count;
         client_num = shared_data->client_count;
