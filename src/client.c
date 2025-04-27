@@ -1,13 +1,42 @@
 #include "bank.h"
 #include <sys/stat.h>
 
+int server_fd;
+int resp_fd;
+char client_fifo[50];
+
+void cleanup() {
+    printf("\nSignal received closing active Client\n");
+    sem_close(sem);
+    sem_unlink(SEM_NAME);
+    unlink(SERVER_FIFO);
+    sem_close(req_sem);
+    sem_unlink(REQ_SEM);
+    sem_close(mutex);
+    sem_unlink(FIFO_MUTEX);
+    close(resp_fd);
+    unlink(client_fifo);
+    close(server_fd);
+    printf("Removing Client FIFO…\n");
+    printf("EXIT...\n");
+    exit(0);
+}
+
+void handle_signal(int sig) {
+    (void)sig;
+    cleanup();
+    exit(0);
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <client_file> <server_fifo>\n", argv[0]);
         exit(1);
     }
 
-    int server_fd = open(argv[2], O_WRONLY | O_NONBLOCK);
+    signal(SIGINT, handle_signal);
+
+    server_fd = open(argv[2], O_WRONLY | O_NONBLOCK);
     if (server_fd == -1) {
         if (errno == ENOENT) {
             fprintf(stderr, "Error: Server is not running.\n");
@@ -64,7 +93,6 @@ int main(int argc, char *argv[]) {
         strcpy(req.account_id, (strcmp(id, "N") == 0) ? "NEW" : id);
         strcpy(req.action, action);
         strncpy(req.client_fifo, client_fifo, sizeof(req.client_fifo));
-        req.client_sequence = client_num; // Track request order
 
         // Send request to server
         sem_wait(mutex);
@@ -85,7 +113,7 @@ int main(int argc, char *argv[]) {
     // After sending all requests
     // Read responses from client FIFO
     for (int i = 0; i < cmd_count*3; i++) {
-        int resp_fd = open(client_fifo, O_RDONLY);
+        resp_fd = open(client_fifo, O_RDONLY);
         char response[256];
         ssize_t bytes_read = read(resp_fd, response, sizeof(response));
         if (bytes_read > 0) {

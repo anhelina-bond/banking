@@ -30,7 +30,7 @@ void deposit(void *arg) {
         int new_client_num = shared_data->count + 1;
         if (new_client_num >= MAX_ACCOUNTS) {
             snprintf(response, sizeof(response), 
-                "Client%02d: Deposit failed. Maximum accounts reached!", req->client_sequence);
+                "Client%02d: Deposit failed. Maximum accounts reached!", shared_data->client_count);
         } else {
             sprintf(shared_data->accounts[shared_data->count].id, "BankID_%02d", new_client_num);
             shared_data->accounts[shared_data->count].balance = req->amount;
