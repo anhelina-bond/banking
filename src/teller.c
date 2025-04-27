@@ -78,8 +78,7 @@ void withdraw(void *arg) {
     Request *req = (Request*)arg;
     sem_wait(sem);
     char response[256];
-    int success = 0;
-   
+    int success = 0;   
 
     for (int i = 0; i < shared_data->count; i++) {
         if (strcmp(shared_data->accounts[i].id, req->account_id) == 0) {            // client found in database
@@ -87,12 +86,12 @@ void withdraw(void *arg) {
                 shared_data->accounts[i].balance -= req->amount;
                 write_log(shared_data->accounts[i].id, 'W', req->amount, shared_data->accounts[i].balance);
                 if (shared_data->accounts[i].balance == 0) {
+                    snprintf(response, sizeof(response), 
+                        "Client%02d: Withdrew %d credits. Account closed.", 
+                        shared_data->accounts[i].client_id, req->amount);
                     // Remove account
                     memmove(&shared_data->accounts[i], &shared_data->accounts[i + 1], 
                            (shared_data->count - i - 1) * sizeof(Account));
-                        snprintf(response, sizeof(response), 
-                            "Client%02d: Withdrew %d credits. Account closed.", 
-                            shared_data->accounts[i].client_id, req->amount);
                 } else {
                     snprintf(response, sizeof(response), 
                         "Client%02d: Withdrew %d credits. New balance: %d", 

@@ -39,7 +39,7 @@ int handle_client(Request *req) {
         
     }   
     sem_post(sem); 
-    snprintf(response, sizeof(response), "Client%02d connected..%s %d credits\n", client_num, req->action, req->amount);
+    snprintf(response, sizeof(response), "Client%02d connected..%s %d credits", client_num, req->action, req->amount);
 
     // Open FIFO once per request
     sem_wait(fifo_mutex);
