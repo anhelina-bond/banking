@@ -71,7 +71,6 @@ int main(int argc, char *argv[]) {
         write(server_fd, &req, sizeof(Request));
         sem_post(mutex);
 
-        printf("Client%02d connected..%s %d credits\n", client_num, action, req.amount);
         client_num++;
     }
     fclose(file);
