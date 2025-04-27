@@ -45,6 +45,11 @@ int main(int argc, char *argv[]) {
         unlink(client_fifo);
         exit(1);
     }
+    sem_t *req_sem = sem_open(REQ_SEM, 0);
+    if (req_sem == SEM_FAILED) {
+        perror("sem_open (client)");
+        exit(1);
+    }
 
     printf("%d clients to connect.. creating clients..\n", cmd_count);
     printf("Connected to Adabank..\n");
@@ -72,12 +77,7 @@ int main(int argc, char *argv[]) {
     }
     fclose(file);
     close(server_fd);
-    sem_t *req_sem = sem_open(REQ_SEM, 0);
-    if (req_sem == SEM_FAILED) {
-        perror("sem_open (client)");
-        exit(1);
-    }
-
+    
     sem_close(req_sem);
 
 
