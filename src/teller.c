@@ -24,17 +24,12 @@ void deposit(void *arg) {
     sem_wait(sem);
     char response[256];
     int success = 0;
-    static int client_fd = -1; // Persistent descriptor for the client FIFO
-
-    // Open FIFO once per client session
+    int client_fd = open(req->client_fifo, O_WRONLY);
     if (client_fd == -1) {
-        client_fd = open(req->client_fifo, O_WRONLY); // No O_APPEND needed
-        if (client_fd == -1) {
-            perror("open");
-            sem_post(sem);
-            free(req);
-            return;
-        }
+        perror("open");
+        sem_post(sem);
+        free(req);
+        exit(1);
     }
     
     if(strcmp(req->account_id, "NEW") == 0) {
@@ -86,17 +81,11 @@ void withdraw(void *arg) {
     sem_wait(sem);
     char response[256];
     int success = 0;
-    static int client_fd = -1; // Persistent descriptor for the client FIFO
-
-    // Open FIFO once per client session
     if (client_fd == -1) {
-        client_fd = open(req->client_fifo, O_WRONLY); // No O_APPEND needed
-        if (client_fd == -1) {
-            perror("open");
-            sem_post(sem);
-            free(req);
-            return;
-        }
+        perror("open");
+        sem_post(sem);
+        free(req);
+        exit(1);
     }
 
     for (int i = 0; i < shared_data->count; i++) {

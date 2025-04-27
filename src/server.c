@@ -29,18 +29,15 @@ int get_client_number(const char *account_id) {
 
 int handle_client(Request *req) {
     char response[256];
-    static int client_fd = -1; // Persistent descriptor for the client FIFO
     int client_num;
     int found = 0;
     // Open FIFO once per client session
+    int client_fd = open(req->client_fifo, O_WRONLY);
     if (client_fd == -1) {
-        client_fd = open(req->client_fifo, O_WRONLY); // No O_APPEND needed
-        if (client_fd == -1) {
-            perror("open");
-            sem_post(sem);
-            free(req);
-            return -1;
-        }
+        perror("open");
+        sem_post(sem);
+        free(req);
+        return -1;
     }
     sem_wait(sem);
     
